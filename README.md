@@ -83,7 +83,6 @@
 
 * Docker Compose
 * Nginx
-* Jenkins
 * CI/CD
 
 ### Мониторинг және қауіпсіздік
