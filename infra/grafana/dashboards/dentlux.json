@@ -1,0 +1,63 @@
+{
+  "uid": "dentlux-overview",
+  "title": "DentLux API",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "15s",
+  "timezone": "Asia/Almaty",
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "API available",
+      "gridPos": { "h": 5, "w": 8, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "dentlux-prometheus" },
+      "targets": [{ "expr": "up{job=\"dentlux\"}", "refId": "A" }]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Failed notifications",
+      "gridPos": { "h": 5, "w": 8, "x": 8, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "dentlux-prometheus" },
+      "targets": [{ "expr": "dentlux_notification_failures", "refId": "A" }]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Requests per second",
+      "gridPos": { "h": 5, "w": 8, "x": 16, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "dentlux-prometheus" },
+      "targets": [{ "expr": "sum(rate(dentlux_http_requests_total[5m]))", "refId": "A" }]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Response time p95",
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 5 },
+      "datasource": { "type": "prometheus", "uid": "dentlux-prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s" } },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95,sum(rate(dentlux_http_duration_seconds_bucket[5m])) by (le))",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Responses by status",
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 5 },
+      "datasource": { "type": "prometheus", "uid": "dentlux-prometheus" },
+      "targets": [
+        {
+          "expr": "sum(rate(dentlux_http_requests_total[5m])) by (status)",
+          "legendFormat": "{{status}}",
+          "refId": "A"
+        }
+      ]
+    }
+  ]
+}

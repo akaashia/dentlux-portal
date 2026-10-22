@@ -1,0 +1,83 @@
+services:
+  db:
+    image: postgres:18-bookworm
+    environment:
+      POSTGRES_DB: dentlux
+      POSTGRES_USER: dentlux
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U dentlux -d dentlux']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+  app:
+    build: .
+    environment:
+      NODE_ENV: production
+      DEMO_MODE: 'false'
+      HOST: 0.0.0.0
+      DATABASE_URL: postgresql://dentlux:${POSTGRES_PASSWORD}@db:5432/dentlux
+      DATA_ENCRYPTION_KEY: ${DATA_ENCRYPTION_KEY:?Set DATA_ENCRYPTION_KEY}
+      AUTH_PEPPER: ${AUTH_PEPPER:?Set AUTH_PEPPER}
+      APP_ORIGIN: ${APP_ORIGIN:?Set HTTPS APP_ORIGIN}
+      PUBLIC_URL: ${PUBLIC_URL:?Set HTTPS PUBLIC_URL}
+      METRICS_TOKEN: ${METRICS_TOKEN:?Set METRICS_TOKEN}
+      SMS_GATEWAY_URL: ${SMS_GATEWAY_URL:?Set SMS_GATEWAY_URL}
+      SMS_GATEWAY_TOKEN: ${SMS_GATEWAY_TOKEN:?Set SMS_GATEWAY_TOKEN}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      STAFF_ACCOUNTS: ${STAFF_ACCOUNTS:-[]}
+    depends_on:
+      db:
+        condition: service_healthy
+    read_only: true
+    tmpfs: [/app/.data, /tmp]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    restart: unless-stopped
+  nginx:
+    image: nginx:stable-bookworm
+    ports: ['80:80', '443:443']
+    volumes:
+      - ./infra/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./infra/tls:/etc/nginx/tls:ro
+    depends_on: [app]
+    restart: unless-stopped
+  backup:
+    image: postgres:18-bookworm
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./infra/backup.sh:/backup.sh:ro
+      - ./backups:/backups
+    entrypoint: [sh, /backup.sh]
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    profiles: [monitoring]
+    volumes:
+      - ./infra/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./infra/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - ./infra/secrets/metrics-token:/run/secrets/metrics-token:ro
+      - prometheus-data:/prometheus
+    restart: unless-stopped
+  grafana:
+    image: grafana/grafana:12.2.0
+    profiles: [monitoring]
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:?Set GRAFANA_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: 'false'
+    ports: ['127.0.0.1:3000:3000']
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./infra/grafana:/etc/grafana/provisioning:ro
+    restart: unless-stopped
+volumes:
+  postgres-data:
+  prometheus-data:
+  grafana-data:

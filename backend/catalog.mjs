@@ -1,0 +1,110 @@
+export const services = [
+  {
+    id: 'consultation',
+    name: { ru: 'Консультация стоматолога', kk: 'Стоматолог кеңесі' },
+    category: 'diagnostics',
+    price: 5000,
+    duration: 30,
+    description: {
+      ru: 'Осмотр, диагностика и персональный план лечения.',
+      kk: 'Тексеру, диагностика және жеке емдеу жоспары.',
+    },
+    icon: 'search',
+  },
+  {
+    id: 'hygiene',
+    name: { ru: 'Профессиональная гигиена', kk: 'Кәсіби гигиена' },
+    category: 'prevention',
+    price: 18000,
+    duration: 30,
+    description: {
+      ru: 'Бережная чистка и рекомендации для здоровья зубов.',
+      kk: 'Ұқыпты тазалау және тіс саулығына арналған кеңестер.',
+    },
+    icon: 'sparkles',
+  },
+  {
+    id: 'therapy',
+    name: { ru: 'Лечение кариеса', kk: 'Тісжегіні емдеу' },
+    category: 'therapy',
+    price: 25000,
+    duration: 30,
+    description: {
+      ru: 'Первичный приём и подбор подходящего лечения.',
+      kk: 'Алғашқы қабылдау және тиісті емді таңдау.',
+    },
+    icon: 'tooth',
+  },
+  {
+    id: 'orthodontics',
+    name: { ru: 'Ортодонтия', kk: 'Ортодонтия' },
+    category: 'orthodontics',
+    price: 7000,
+    duration: 30,
+    description: {
+      ru: 'Консультация по исправлению прикуса и элайнерам.',
+      kk: 'Тістемді түзету және элайнерлер жөнінде кеңес.',
+    },
+    icon: 'smile',
+  },
+  {
+    id: 'implantation',
+    name: { ru: 'Имплантация', kk: 'Имплантация' },
+    category: 'surgery',
+    price: 10000,
+    duration: 30,
+    description: {
+      ru: 'Консультация хирурга и план восстановления улыбки.',
+      kk: 'Хирург кеңесі және күлкіні қалпына келтіру жоспары.',
+    },
+    icon: 'shield',
+  },
+  {
+    id: 'children',
+    name: { ru: 'Детская стоматология', kk: 'Балалар стоматологиясы' },
+    category: 'children',
+    price: 5000,
+    duration: 30,
+    description: {
+      ru: 'Знакомство с врачом и заботливый приём без спешки.',
+      kk: 'Дәрігермен танысу және асықпай қамқор қабылдау.',
+    },
+    icon: 'heart',
+  },
+];
+export const doctors = [
+  {
+    id: 'aida',
+    name: { ru: 'Айда Нурланова', kk: 'Айда Нұрланова' },
+    specialty: { ru: 'Стоматолог-терапевт', kk: 'Стоматолог-терапевт' },
+    experience: 12,
+    initials: 'АН',
+    color: 'sage',
+    services: ['consultation', 'hygiene', 'therapy'],
+  },
+  {
+    id: 'arman',
+    name: { ru: 'Арман Сейтов', kk: 'Арман Сейітов' },
+    specialty: { ru: 'Стоматолог-хирург', kk: 'Стоматолог-хирург' },
+    experience: 10,
+    initials: 'АС',
+    color: 'sand',
+    services: ['consultation', 'implantation'],
+  },
+  {
+    id: 'dana',
+    name: { ru: 'Дана Омарова', kk: 'Дана Омарова' },
+    specialty: { ru: 'Врач-ортодонт', kk: 'Дәрігер-ортодонт' },
+    experience: 8,
+    initials: 'ДО',
+    color: 'rose',
+    services: ['consultation', 'orthodontics', 'children'],
+  },
+];
+export const clinic = {
+  id: 'astana',
+  address: { ru: 'Астана, пр. Мәңгілік Ел, 26', kk: 'Астана, Мәңгілік Ел даңғылы, 26' },
+  hours: { ru: 'Пн–Сб · 09:00–18:00', kk: 'Дс–Сб · 09:00–18:00' },
+  timezone: 'Asia/Almaty',
+  slotMinutes: 30,
+};

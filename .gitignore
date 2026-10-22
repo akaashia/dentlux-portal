@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+.data/
+.work/
+coverage/
+test-results/
+playwright-report/
+.playwright-cli/
+*.log
+backups/
+infra/tls/
+infra/secrets/

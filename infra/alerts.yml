@@ -1,0 +1,24 @@
+groups:
+  - name: dentlux
+    rules:
+      - alert: DentLuxSlowResponses
+        expr: histogram_quantile(0.95, sum(rate(dentlux_http_duration_seconds_bucket[5m])) by (le)) > 1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: DentLux p95 response time exceeds one second
+      - alert: DentLuxUnavailable
+        expr: up{job="dentlux"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: DentLux API is unavailable
+      - alert: DentLuxNotificationFailures
+        expr: dentlux_notification_failures > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: Notifications exhausted three delivery attempts
