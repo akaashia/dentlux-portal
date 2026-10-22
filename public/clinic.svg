@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1000" viewBox="0 0 900 1000">
+<defs><linearGradient id="wall" x2=".8" y2="1"><stop stop-color="#f1eadd"/><stop offset="1" stop-color="#dcd9ca"/></linearGradient><linearGradient id="glass" x2="1" y2="1"><stop stop-color="#f7fbf1"/><stop offset="1" stop-color="#c4d9d0"/></linearGradient><linearGradient id="chair" x2="1" y2="1"><stop stop-color="#a6b8a2"/><stop offset="1" stop-color="#657f6d"/></linearGradient><linearGradient id="floor" x2=".8" y2="1"><stop stop-color="#e5d7c4"/><stop offset="1" stop-color="#cbbda8"/></linearGradient><filter id="shadow"><feDropShadow dx="4" dy="12" stdDeviation="12" flood-color="#4c5b48" flood-opacity=".15"/></filter><pattern id="wood" width="25" height="250" patternUnits="userSpaceOnUse"><rect width="25" height="250" fill="#c9b99f"/><path d="M3 0v250M23 0v250" stroke="#a99b83" opacity=".35"/></pattern></defs>
+<path fill="url(#wall)" d="M0 0h900v1000H0z"/>
+<path fill="url(#floor)" d="m0 700 900-30v330H0z"/>
+<path d="m170 710 200 290m150-305 155 305M0 855l900-30" stroke="#f5eee2" stroke-width="3" opacity=".65"/>
+<path d="M0 0h130v722H0z" fill="#e6dfd1"/>
+<rect x="168" y="70" width="493" height="492" rx="215" fill="#b4b5a0"/>
+<path d="M185 562V296a230 230 0 0 1 460 0v266" fill="url(#glass)"/>
+<path d="M338 117v445m152-452v452M184 341h461" stroke="#f9f7ee" stroke-width="12"/>
+<path d="M198 497q60-171 136-68 72-122 153-8 108-160 144-44v173H198z" fill="#bccbb6" opacity=".65"/>
+<path d="M205 460 405 153M320 545 579 149M482 548 634 329" stroke="#fffef2" stroke-width="37" opacity=".28"/>
+<path d="M696 0h204v695H696z" fill="url(#wood)"/>
+<path d="M735 473h121v214H735z" fill="#e7e6d9"/>
+<path d="M725 467h141v20H725z" fill="#f9f7ef"/>
+<rect x="754" y="403" width="51" height="61" rx="6" fill="#e6efe8"/><path d="M778 410v-19h36" stroke="#6e8c7e" stroke-width="8" fill="none"/><path d="M780 428v20m-10-10h20" stroke="#809e8a" stroke-width="4"/>
+<path d="M735 564h121" stroke="#c0c3b5" stroke-width="2"/>
+<path d="M790 520h18m-18 86h18" stroke="#6e8778" stroke-width="5" stroke-linecap="round"/>
+<ellipse cx="446" cy="847" rx="273" ry="53" fill="#858a73" opacity=".16"/>
+<g filter="url(#shadow)"><path d="m422 714 46 100h-65l-28-87" fill="#d9ded2"/><ellipse cx="435" cy="835" rx="111" ry="23" fill="#e9ece2"/><path d="m281 639 128 82q27 20 55 5l102-60-39-51-105 57-101-78z" fill="#eef0e6"/><path d="m354 517 71 130q10 16 29 9l106-48q22-10 11-33l-45-117q-15-41-50-31l-86 30q-51 16-36 60" fill="url(#chair)"/><path d="m395 623-100-40q-29-12-44 13l-41 68q-16 30 14 47l96 48q24 13 43-13l51-78q20-29-19-45" fill="url(#chair)"/><rect x="406" y="396" width="101" height="70" rx="28" transform="rotate(-21 406 396)" fill="#8fa78f"/><path d="m273 661 44 22m155-116 59-26" stroke="#dfe4d7" stroke-width="14" stroke-linecap="round"/><path d="m317 683 37-56m177-86-9-36" stroke="#dfe4d7" stroke-width="9" stroke-linecap="round"/></g>
+<path d="M593 642v-75q0-19 17-19h40" fill="none" stroke="#f5f6ec" stroke-width="21"/><rect x="608" y="504" width="130" height="67" rx="16" fill="#f6f7ef" filter="url(#shadow)"/><rect x="624" y="515" width="51" height="29" rx="5" fill="#416b60"/><path d="M691 521h24m-24 13h17" stroke="#c1cdbb" stroke-width="4"/>
+<path d="M628 565q-4 64-24 105m53-105q8 70-18 113m37-113q11 86-4 119" fill="none" stroke="#e4e9de" stroke-width="6" stroke-linecap="round"/>
+<path d="M44 31h400v42H44z" fill="#e7e3d4"/><path d="M307 53h39l116 174-45 70" stroke="#eef0e8" stroke-width="17" fill="none" stroke-linecap="round"/><ellipse cx="419" cy="296" rx="60" ry="24" transform="rotate(-19 419 296)" fill="#f7f8ef" stroke="#d2d9cb" stroke-width="8"/><ellipse cx="419" cy="296" rx="36" ry="12" transform="rotate(-19 419 296)" fill="#fffbe1"/>
+<path d="M65 805h94l-14 100H80z" fill="#b6a58c"/>
+<path d="M111 809V559m0 176q-75-57-58-111 70 13 58 111m1-66q65-34 57-94-63 4-57 94m-2-52q-48-32-40-83 59 1 40 83m2-10q43-55 20-91-44 24-20 91" fill="#738b66" stroke="#627a59" stroke-width="5" stroke-linecap="round"/>
+<path d="M20 963h862" stroke="#fff7e9" opacity=".35"/>
+</svg>

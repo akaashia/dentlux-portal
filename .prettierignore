@@ -1,0 +1,5 @@
+backend/migrations/*.sql
+infra/backup.sh
+infra/nginx.conf
+infra/tls/
+infra/secrets/
