@@ -64,3 +64,27 @@ jobs:
           path: |
             playwright-report/
             test-results/
+      - name: Package verified application
+        run: tar -czf dentlux-runtime.tgz dist backend scripts package.json package-lock.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: runtime-${{ github.sha }}
+          path: dentlux-runtime.tgz
+          if-no-files-found: error
+          retention-days: 30
+  publish:
+    needs: [security, test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: runtime-${{ github.sha }}
+      - run: sha256sum dentlux-runtime.tgz > SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dentlux-release-${{ github.sha }}
+          path: |
+            dentlux-runtime.tgz
+            SHA256SUMS
+          if-no-files-found: error
+          retention-days: 30
