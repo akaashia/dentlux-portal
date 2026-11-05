@@ -2,31 +2,49 @@ name: DentLux checks
 on:
   push:
   pull_request:
+  workflow_dispatch:
+
 permissions:
   contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   security:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@v2
+      - name: Құпияларды сканерлеу (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_ENABLE_COMMENTS: 'false'
-      - uses: aquasecurity/trivy-action@v0.36.0
+      - name: Тәуелділіктердің осалдықтары (Trivy, HIGH/CRITICAL)
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
           scan-ref: .
           severity: HIGH,CRITICAL
           exit-code: '1'
-      - uses: anchore/sbom-action@v0
+      - name: SBOM құру
+        uses: anchore/sbom-action@v0
         with:
           format: spdx-json
           output-file: sbom.spdx.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ github.sha }}
+          path: sbom.spdx.json
+          retention-days: 30
+
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     services:
       postgres:
         image: postgres:18
@@ -44,19 +62,31 @@ jobs:
         with:
           node-version: '22'
           cache: npm
-      - run: npm ci
-      - run: npm run lint
-      - run: npm run format:check
-      - run: npm test
-      - run: npm test
+      - name: Тәуелділіктерді орнату
+        run: npm ci
+      - name: Линтер
+        run: npm run lint
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: DORA есептеу логикасы
+        run: python -m unittest discover -s tests -p 'test_dora.py'
+      - name: Формат тексеруі
+        run: npm run format:check
+      - name: Бірлік және интеграциялық тесттер (PostgreSQL-мен)
+        run: npm test
         env:
           TEST_DATABASE_URL: postgresql://dentlux_test:test-only-password@localhost:5432/dentlux_test
-      - run: npm run build
-      - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e
+      - name: Өндірістік құрастыру
+        run: npm run build
+      - name: Production тәуелділіктері — осалдық аудиті
+        run: npm audit --omit=dev --audit-level=high
+      - name: Playwright браузерін орнату
+        run: npx playwright install --with-deps chromium
+      - name: End-to-end тесттер
+        run: npm run test:e2e
         env:
           PLAYWRIGHT_CHANNEL: chromium
-      - run: npm audit --omit=dev --audit-level=high
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
@@ -64,3 +94,50 @@ jobs:
           path: |
             playwright-report/
             test-results/
+      - name: Тексерілген релиз пакеті
+        run: tar -czf dentlux-runtime.tgz dist backend scripts package.json package-lock.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: runtime-${{ github.sha }}
+          path: dentlux-runtime.tgz
+          if-no-files-found: error
+          retention-days: 30
+
+  publish:
+    needs: [security, test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: runtime-${{ github.sha }}
+      - run: sha256sum dentlux-runtime.tgz > SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dentlux-release-${{ github.sha }}
+          path: |
+            dentlux-runtime.tgz
+            SHA256SUMS
+          if-no-files-found: error
+          retention-days: 30
+
+  release:
+    # GitHub Release — тек пакет жариялау. Production deploy бөлек тіркеледі.
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [publish]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Тег main тарихында болуы тиіс
+        run: git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+      - uses: actions/download-artifact@v4
+        with:
+          name: dentlux-release-${{ github.sha }}
+      - name: GitHub Release жасау
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "$GITHUB_REF_NAME" dentlux-runtime.tgz SHA256SUMS --generate-notes --verify-tag
