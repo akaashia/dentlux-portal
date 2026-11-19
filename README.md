@@ -52,6 +52,8 @@ npm run test:e2e  # end-to-end тесттер
 
 ## Құжаттама
 
+[Зертханалық жұмыстар №1–11](docs/README.md)
+
 | Құжат | Мазмұны |
 |---|---|
 | [docs/operations.md](docs/operations.md) | Іске қосу, PostgreSQL, Docker, HTTPS, резервтік көшірме және импорт |

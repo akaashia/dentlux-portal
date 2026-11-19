@@ -1,0 +1,4 @@
+﻿id,title,owner,planned_due,acceptance,state
+T-SEC-01,CI security gate,Жандос Арлан,2026-10-27,Gitleaks/Trivy job өтеді; HIGH/CRITICAL бұғаттайды; run дәлелі,PR20 success; tracker ID қажет
+T-SEC-02,OTP және session hardening,Жандос Арлан,2026-11-06,OTP бір реттік 5 минут; rate limit; session expiry test,Baseline тесттері бар; tracker ID қажет
+T-SEC-03,Шифрлау және минимизация,Еділ Шыңтас,2026-11-08,AES-GCM; log PII жоқ; synthetic test,Baseline тесттері бар; tracker ID қажет
