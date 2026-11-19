@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useLocale } from './i18n';
 import { api, localDate, shiftDate } from './api';
+import { clearSchedule, readSchedule, saveSchedule } from './scheduleCache';
 import { Button, Dialog, DateSlots, ErrorMessage, Empty } from './components';
 
 const tabs = {
@@ -39,9 +40,10 @@ const icons = {
 };
 export default function Workspace({ catalog, user, onBack, onLogout, locale, setLocale, logo }) {
   const { t } = useLocale();
+  const account = [user.id, user.role, user.doctorId].join(':');
   const [tab, setTab] = useState(tabs[user.role]?.[0] || 'appointments');
   const [date, setDate] = useState(localDate()),
-    [data, setData] = useState({}),
+    [result, setResult] = useState(null),
     [busy, setBusy] = useState(true),
     [error, setError] = useState(null),
     [version, setVersion] = useState(0);
@@ -52,6 +54,11 @@ export default function Workspace({ catalog, user, onBack, onLogout, locale, set
     [undo, setUndo] = useState(null),
     [moving, setMoving] = useState(null),
     [saving, setSaving] = useState(false);
+  const view = tab + ':' + date;
+  const current = result?.view === view ? result : null;
+  const data = current?.data || {};
+  const cached = current?.cached === true;
+  const canEdit = user.role === 'receptionist' && Boolean(data.bookings) && !cached;
   const refresh = () => setVersion((v) => v + 1);
   useEffect(() => {
     window.addEventListener('dentlux:availability', refresh);
@@ -59,6 +66,8 @@ export default function Workspace({ catalog, user, onBack, onLogout, locale, set
   }, []);
   useEffect(() => {
     let active = true;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
     setBusy(true);
     setError(null);
     const endpoints =
@@ -73,20 +82,47 @@ export default function Workspace({ catalog, user, onBack, onLogout, locale, set
               : tab === 'schedule'
                 ? []
                 : [`/staff/${tab}`];
-    Promise.all(endpoints.map((e) => api(e)))
+    Promise.allSettled(endpoints.map((e) => api(e, { signal: controller.signal })))
       .then((values) => {
-        if (active) setData(values.reduce((acc, value) => ({ ...acc, ...value }), {}));
-      })
-      .catch((e) => {
-        if (active) setError(e);
+        if (!active) return;
+        const rejected = values.filter((value) => value.status === 'rejected');
+        const denied = rejected.find(({ reason }) => [401, 403].includes(reason.status));
+        const failure = denied?.reason || rejected[0]?.reason;
+        if (denied) {
+          clearSchedule();
+          setResult(null);
+          setError(failure);
+          return;
+        }
+
+        const received = Object.assign(
+          {},
+          ...values.filter((value) => value.status === 'fulfilled').map((value) => value.value),
+        );
+        const isBookingsView = tab === 'dashboard' || tab === 'appointments';
+        let snapshot = null;
+        if (Array.isArray(received.bookings)) {
+          saveSchedule(account, date, received.bookings);
+        } else if (
+          isBookingsView &&
+          (failure?.code === 'NETWORK_ERROR' || failure?.status >= 500)
+        ) {
+          snapshot = readSchedule(account, date);
+        }
+        if (snapshot) received.bookings = snapshot;
+        setResult({ view, data: received, cached: snapshot !== null });
+        setError(failure || null);
       })
       .finally(() => {
+        clearTimeout(timeout);
         if (active) setBusy(false);
       });
     return () => {
       active = false;
+      clearTimeout(timeout);
+      controller.abort();
     };
-  }, [tab, date, version]);
+  }, [tab, date, version, account, view]);
   async function changeStatus(booking, newStatus, isUndo = false) {
     setSaving(true);
     setError(null);
@@ -111,7 +147,7 @@ export default function Workspace({ catalog, user, onBack, onLogout, locale, set
     (b) =>
       (filterDoctor === 'all' || b.doctorId === filterDoctor) &&
       (status === 'all' || b.status === status) &&
-      `${b.name} ${b.reference}`.toLowerCase().includes(query.toLowerCase()),
+      (cached || `${b.name} ${b.reference}`.toLowerCase().includes(query.toLowerCase())),
   );
   const dateTabs = ['dashboard', 'appointments', 'schedule', 'statistics'].includes(tab);
   return (
@@ -128,7 +164,6 @@ export default function Workspace({ catalog, user, onBack, onLogout, locale, set
                 className={tab === id ? 'active' : ''}
                 onClick={() => {
                   setTab(id);
-                  setData({});
                   setMessage('');
                   setUndo(null);
                 }}
@@ -204,14 +239,18 @@ export default function Workspace({ catalog, user, onBack, onLogout, locale, set
           </div>
         )}
         <ErrorMessage error={error} />
-        {error && data.bookings && <p className="fine">{t.lastLoaded}</p>}
+        {cached && (
+          <p className="fine" role="status">
+            {t.lastLoaded}
+          </p>
+        )}
         {message && (
           <div role="status" className="toast">
             <Check size={17} />
             {message}
-            {undo && (
+            {undo && canEdit && (
               <button
-                disabled={saving}
+                disabled={saving || busy}
                 onClick={() => changeStatus(undo.booking, undo.status, true)}
               >
                 <Undo2 size={15} />
@@ -282,15 +321,17 @@ export default function Workspace({ catalog, user, onBack, onLogout, locale, set
               </span>
             </div>
             <div className="table-filters">
-              <label className="search-input">
-                <Search size={17} />
-                <input
-                  aria-label={t.search}
-                  placeholder={t.search}
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                />
-              </label>
+              {!cached && (
+                <label className="search-input">
+                  <Search size={17} />
+                  <input
+                    aria-label={t.search}
+                    placeholder={t.search}
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                  />
+                </label>
+              )}
               {user.role !== 'doctor' && (
                 <select
                   aria-label={t.doctorLabel}
@@ -325,39 +366,42 @@ export default function Workspace({ catalog, user, onBack, onLogout, locale, set
                     <tr>
                       {[
                         t.timeLabel,
-                        t.patientLabel,
-                        t.serviceLabel,
+                        ...(!cached ? [t.patientLabel, t.serviceLabel] : []),
                         t.doctorLabel,
                         t.statusLabel,
-                        ...(user.role === 'receptionist' ? [t.actions] : []),
+                        ...(canEdit ? [t.actions] : []),
                       ].map((v) => (
                         <th key={v}>{v}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {filtered.map((b) => (
-                      <tr key={b.id}>
+                    {filtered.map((b, index) => (
+                      <tr key={b.id || index}>
                         <td className="time-cell">
                           {b.time}
-                          <small>{b.reference}</small>
+                          {!cached && <small>{b.reference}</small>}
                         </td>
-                        <td>
-                          <strong>{b.name}</strong>
-                          <small>{b.phone}</small>
-                        </td>
-                        <td>
-                          {service(b.serviceId)}
-                          <small>{b.price.toLocaleString(locale)} ₸</small>
-                        </td>
+                        {!cached && (
+                          <>
+                            <td>
+                              <strong>{b.name}</strong>
+                              <small>{b.phone}</small>
+                            </td>
+                            <td>
+                              {service(b.serviceId)}
+                              <small>{b.price.toLocaleString(locale)} ₸</small>
+                            </td>
+                          </>
+                        )}
                         <td>{label(b.doctorId)}</td>
                         <td>
-                          {user.role === 'receptionist' ? (
+                          {canEdit ? (
                             <select
                               className={`status-select status-${b.status}`}
                               aria-label={`${t.statusLabel} — ${b.reference}`}
                               value={b.status}
-                              disabled={saving}
+                              disabled={saving || busy}
                               onChange={(e) => changeStatus(b, e.target.value)}
                             >
                               {['scheduled', 'arrived', 'completed', 'no_show', 'cancelled'].map(
@@ -372,11 +416,11 @@ export default function Workspace({ catalog, user, onBack, onLogout, locale, set
                             <span className={`status-pill status-${b.status}`}>{t[b.status]}</span>
                           )}
                         </td>
-                        {user.role === 'receptionist' && (
+                        {canEdit && (
                           <td>
                             <button
                               className="text-button"
-                              disabled={b.status !== 'scheduled' || saving}
+                              disabled={b.status !== 'scheduled' || saving || busy}
                               onClick={() => setMoving(b)}
                             >
                               {t.reschedule}
@@ -390,7 +434,8 @@ export default function Workspace({ catalog, user, onBack, onLogout, locale, set
                 </table>
               </div>
             ) : (
-              !busy && (
+              !busy &&
+              data.bookings && (
                 <Empty
                   title={data.bookings?.length ? t.noResults : t.noBookings}
                   text={t.noBookingsText}
@@ -510,7 +555,7 @@ export default function Workspace({ catalog, user, onBack, onLogout, locale, set
           </section>
         )}
       </div>
-      {moving && (
+      {moving && canEdit && (
         <MoveBooking
           booking={moving}
           onClose={() => setMoving(null)}

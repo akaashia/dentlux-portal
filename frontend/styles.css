@@ -1846,7 +1846,7 @@ strong {
 }
 .panel-title > span {
   font-size: 11px;
-  color: #8c9b7d;
+  color: var(--muted);
 }
 .table-filters {
   display: flex;

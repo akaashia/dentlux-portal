@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { LocaleContext, messages, errors } from './i18n';
 import { api } from './api';
+import { clearSchedule } from './scheduleCache';
 import { Avatar, Button, Dialog, ErrorMessage, PhoneAuth } from './components';
 import Booking from './Booking';
 import Workspace from './Workspace';
@@ -87,6 +88,7 @@ export default function App() {
         if (active) {
           setCatalog(data);
           setUser(me.user);
+          if (!me.user) clearSchedule();
         }
       })
       .catch((e) => {
@@ -104,6 +106,7 @@ export default function App() {
     return () => socket.close();
   }, []);
   async function logout() {
+    clearSchedule();
     try {
       await api('/auth/logout', { method: 'POST', body: {} });
       setUser(null);
@@ -136,6 +139,7 @@ export default function App() {
       )}
       {workspace && user && catalog ? (
         <Workspace
+          key={user.id}
           catalog={catalog}
           user={user}
           onBack={() => setWorkspace(false)}
@@ -475,7 +479,7 @@ export default function App() {
                         <small>{t.break}</small>
                       </div>
                     </div>
-                    <p className="fine">{t.phoneUnset}</p>
+                    <p className="fine">{catalog.demo ? t.demoContact : t.phoneUnset}</p>
                   </div>
                   <div className="map-illustration">
                     <div className="map-grid" />
