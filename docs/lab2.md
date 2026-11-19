@@ -248,6 +248,8 @@ dentlux-portal/
 | Қатысушылар және оқытушы | Шақыру/қабылдау фактісін растайтын дерек берілмеген; орындалды деп белгіленбейді |
 | Custom fields | Жоспарланған өрістер: Sprint, Story Points, Priority, Component, Epic; нақты баптау скриншоты қажет |
 
+19.11.2026 күні жобаға Sprint, Story Points, Priority, Component және Epic өрістері қосылды. Sprint — бір апталық кезең. [Орнату скриншоты](assets/lab2-project-fields.jpg) · [Жоба баптаулары](https://github.com/users/akaashia/projects/8/settings)
+
 Репозиторийде қолданылатын келісім: feature/#N-short-description, bug/#N-short-description, chore/#N-short-description; commit: feat:, fix:, docs:, chore:. Осы baseline: main + қысқа PR тармақтары; develop міндетті емес.
 
 [Барлық зертханалық жұмыстар](README.md)
