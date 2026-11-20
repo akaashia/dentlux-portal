@@ -2,7 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { fixture, bookingBody } from './helpers.mjs';
 import { createBooking } from '../backend/booking.mjs';
-import { processOutbox, linkTelegramAccount } from '../backend/notifications.mjs';
+import { loadConfig } from '../backend/config.mjs';
+import { processOutbox, linkTelegramAccount, startWorkers } from '../backend/notifications.mjs';
 
 test('confirmation and two-hour reminder use outbox, lease prevents duplicate workers, opt-out cancels pending work', async (t) => {
   const f = await fixture();
@@ -85,4 +86,64 @@ test('verified Telegram link is single-use and schedules confirmation for an exi
   ]);
   assert.equal(notifications.filter((n) => n.channel === 'telegram').length, 2);
   assert.equal(notifications.filter((n) => n.channel === 'sms').length, 2);
+});
+
+test('a loopback demo can use the Telegram Bot API while SMS remains simulated', async (t) => {
+  const f = await fixture();
+  t.after(f.close);
+  const patient = await f.login();
+  const [user] = await f.db.query('SELECT * FROM users WHERE id=$1', [patient.body.user.id]);
+  const booking = await createBooking(f.db, f.crypto, user, bookingBody(f.date));
+  const env = { DATA_DIR: f.config.dataDir, TELEGRAM_BOT_TOKEN: '100001:synthetic' };
+  assert.equal(loadConfig(env).telegramToken, undefined);
+  f.config.telegramToken = loadConfig({ ...env, TELEGRAM_LIVE_IN_DEMO: 'true' }).telegramToken;
+
+  const messages = [];
+  const updates = [];
+  const request = globalThis.fetch;
+  t.mock.method(globalThis, 'fetch', async (url, options) => {
+    if (!url.startsWith('https://api.telegram.org/')) return request(url, options);
+    if (url.endsWith('/getMe'))
+      return Response.json({ ok: true, result: { is_bot: true, username: 'DentLuxExampleBot' } });
+    if (url.endsWith('/getUpdates')) return Response.json({ ok: true, result: updates });
+    assert.ok(url.endsWith('/sendMessage'));
+    messages.push(JSON.parse(options.body));
+    return Response.json({ ok: true, result: { message_id: messages.length } });
+  });
+
+  const response = await f.request('/telegram/link', { method: 'POST', cookie: patient.cookie });
+  assert.equal(response.status, 200);
+  const link = new URL(response.body.url);
+  assert.equal(link.pathname, '/DentLuxExampleBot');
+  const code = link.searchParams.get('start');
+  updates.push(
+    { update_id: 1, message: { chat: { id: -100, type: 'group' }, text: `/start ${code}` } },
+    { update_id: 2, message: { chat: { id: 123, type: 'private' }, text: `/start ${code}` } },
+  );
+  const stop = startWorkers(f.db, f.config, f.crypto);
+  await stop();
+  await processOutbox(f.db, f.config, f.crypto);
+
+  const [reminder] = await f.db.query(
+    "SELECT due_at FROM notifications WHERE booking_id=$1 AND channel='telegram' AND kind LIKE 'reminder:%'",
+    [booking.id],
+  );
+  await processOutbox(f.db, f.config, f.crypto, new Date(reminder.due_at));
+  assert.deepEqual(
+    messages.map(({ chat_id, text }) => [String(chat_id), text.split('\n')[0]]),
+    [
+      ['123', 'Уведомления DentLux подключены.'],
+      ['123', 'Запись подтверждена'],
+      ['123', 'Напоминание о приёме'],
+    ],
+  );
+  const outcomes = await f.db.query(
+    'SELECT channel,status FROM notifications WHERE booking_id=$1',
+    [booking.id],
+  );
+  assert.deepEqual(
+    outcomes.filter((row) => row.channel === 'telegram').map((row) => row.status),
+    ['sent', 'sent'],
+  );
+  assert.ok(outcomes.filter((row) => row.channel === 'sms').every((row) => row.status === 'demo'));
 });

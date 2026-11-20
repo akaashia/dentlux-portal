@@ -34,6 +34,10 @@ export function loadConfig(env = process.env) {
     throw new Error('SMS gateway must use HTTPS');
   const staff = JSON.parse(env.STAFF_ACCOUNTS || '[]');
   if (!Array.isArray(staff)) throw new Error('STAFF_ACCOUNTS must be an array');
+  const telegramLive = !demo || env.TELEGRAM_LIVE_IN_DEMO === 'true';
+  const telegramToken = telegramLive ? env.TELEGRAM_BOT_TOKEN?.trim() : undefined;
+  if (demo && telegramLive && !telegramToken)
+    throw new Error('TELEGRAM_BOT_TOKEN is required when TELEGRAM_LIVE_IN_DEMO=true');
   return {
     production,
     demo,
@@ -49,7 +53,7 @@ export function loadConfig(env = process.env) {
     metricsToken: env.METRICS_TOKEN || '',
     smsUrl: env.SMS_GATEWAY_URL,
     smsToken: env.SMS_GATEWAY_TOKEN,
-    telegramToken: env.TELEGRAM_BOT_TOKEN,
+    telegramToken,
     staff,
   };
 }
