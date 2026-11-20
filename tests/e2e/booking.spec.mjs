@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { localDate, addDays } from '../../backend/booking.mjs';
 import { mkdirSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 
 let bookingDate = addDays(localDate(), 1);
 if (new Date(`${bookingDate}T12:00:00+05:00`).getUTCDay() === 0)
@@ -36,7 +37,18 @@ test('patient books, receptionist sees it and can change and undo status', async
   const reference = await dialog.locator('.reference strong').textContent();
   const downloadPromise = page.waitForEvent('download');
   await dialog.getByRole('button', { name: 'Добавить в календарь' }).click();
-  expect((await downloadPromise).suggestedFilename()).toBe(`${reference}.ics`);
+  const calendar = await downloadPromise;
+  expect(calendar.suggestedFilename()).toBe(`${reference}.ics`);
+  const contents = await readFile(await calendar.path(), 'utf8');
+  const utcDate = bookingDate.replaceAll('-', '');
+  expect(contents.split('\r\n')).toEqual(
+    expect.arrayContaining([
+      'BEGIN:VCALENDAR',
+      'DTSTART:' + utcDate + 'T050000Z',
+      'DTEND:' + utcDate + 'T053000Z',
+      'END:VCALENDAR',
+    ]),
+  );
   await dialog.getByRole('button', { name: 'Отключить уведомления' }).click();
   await expect(
     dialog.getByText('Уведомления отключены. Сохраните приём в календаре.'),
@@ -63,8 +75,32 @@ test('patient books, receptionist sees it and can change and undo status', async
   await expect(page.locator('.toast')).toContainText('Приём перенесён');
   await expect(page.getByRole('cell', { name: `11:00 ${reference}`, exact: true })).toBeVisible();
   await page.screenshot({ path: '.work/screenshots/workspace.png', fullPage: true });
+  const cache = await page.evaluate(() => sessionStorage.getItem('dentlux-staff-schedule'));
+  expect(cache).not.toContain(reference);
+  expect(cache).not.toContain('Демо Тест Пациент');
+  expect(cache).not.toContain('+77005555555');
+
+  const scheduleRequest = /\/api\/staff\/bookings\?/;
+  await page.route(scheduleRequest, (route) => route.abort());
   await page.reload();
-  await expect(page.getByRole('button', { name: 'Рабочее место' })).toBeVisible();
+  await page.getByRole('button', { name: 'Рабочее место' }).click();
+  const dateInput = page.locator('.date-toolbar input');
+  await dateInput.fill(bookingDate);
+  const savedNotice = page.getByText('Показано сохранённое расписание.', { exact: false });
+  await expect(savedNotice).toBeVisible();
+  await expect(page.getByRole('cell', { name: '11:00', exact: true })).toBeVisible();
+  await expect(page.getByText('Демо Тест Пациент', { exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Перенести', exact: true })).toHaveCount(0);
+
+  await dateInput.fill(addDays(bookingDate, 1));
+  await expect(savedNotice).toHaveCount(0);
+  await expect(page.getByRole('cell', { name: '11:00', exact: true })).toHaveCount(0);
+  await dateInput.fill(bookingDate);
+  await expect(savedNotice).toBeVisible();
+  await page.unroute(scheduleRequest);
+  await page.getByRole('button', { name: 'Обновить', exact: true }).click();
+  await expect(page.getByRole('cell', { name: 'Демо Тест Пациент', exact: false })).toBeVisible();
+  await expect(savedNotice).toHaveCount(0);
   expect(errors).toEqual([]);
   // A new session cannot read a staff endpoint, even if it opens the same URL.
   const anon = await browser.newContext();

@@ -286,7 +286,7 @@ Pre-mortem 20 тәуекел берді, қауіп үлгілеу тағы 3-і
 
 https://github.com/akaashia/dentlux-portal/actions/runs/41981075829 — success, commit c9b01c5. Security job Gitleaks, Trivy және SBOM қадамдарын қамтиды; test job да өткен. Бұл 14.10 тарихи Trivy орындалмады деген жазбаны жоймайды, кейінгі орындалу дәлелін қосады. Жеке raw scan artifact бұл пакетте жоқ; GitHub-тағы run — тексерілетін негізгі сілтеме.
 
-Қауіп моделі — берілген DFD және STRIDE кестесі. Threat Dragon-да жасалған жоба файлы ұсынылмаған; сурет сол құралда жасалды деп белгіленбейді. Дополнения/threat-model.md — модельдің өңделетін компоненттері мен ағындары; Threat Dragon project export-ы әлі қажет.
+Қауіп моделі — берілген DFD және STRIDE кестесі. [Threat Dragon 2 жобасы](assets/lab7-threat-dragon.json) осы DFD мен 11 қауіп жазбасынан дайындалды. Қауіптер RAID нөмірлерімен белгіленген. Бастапқы сурет жоғарыда сақталған.
 
 Тіркелетін шаралар: T-SEC-01 CI security gate — Арлан; T-SEC-02 OTP/session hardening — Арлан, QA Әселхан; T-SEC-03 шифрлау және минимизация — Шыңтас. Бастапқы жоспар күндері сақталған, орындалуы commit/test/Issue дәлелімен ғана жабылады.
 

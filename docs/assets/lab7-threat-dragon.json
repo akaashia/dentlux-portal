@@ -1,0 +1,1054 @@
+{
+  "version": "2.0",
+  "summary": {
+    "id": 0,
+    "title": "DentLux Portal · STRIDE",
+    "owner": "DentLux",
+    "description": "Модель аутентификации и доступа. Основана на DFD и таблице STRIDE лабы №7."
+  },
+  "detail": {
+    "contributors": [],
+    "diagrams": [
+      {
+        "id": 0,
+        "version": "2.0",
+        "title": "DentLux · вход и доступ к записи",
+        "thumbnail": "./public/content/images/thumbnail.stride.jpg",
+        "diagramType": "STRIDE",
+        "cells": [
+          {
+            "position": {
+              "x": 30,
+              "y": 90
+            },
+            "size": {
+              "width": 165,
+              "height": 72
+            },
+            "attrs": {
+              "text": {
+                "text": "Patient browser"
+              }
+            },
+            "shape": "actor",
+            "id": "a0000000-0000-4000-8000-000000000001",
+            "zIndex": 5,
+            "data": {
+              "name": "Patient browser",
+              "description": "Запись и вход по SMS-коду",
+              "type": "tm.Actor",
+              "isTrustBoundary": false,
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "threats": [],
+              "hasOpenThreats": false
+            }
+          },
+          {
+            "position": {
+              "x": 30,
+              "y": 295
+            },
+            "size": {
+              "width": 165,
+              "height": 72
+            },
+            "attrs": {
+              "text": {
+                "text": "Staff browser"
+              }
+            },
+            "shape": "actor",
+            "id": "a0000000-0000-4000-8000-000000000002",
+            "zIndex": 5,
+            "data": {
+              "name": "Staff browser",
+              "description": "Работа с расписанием и панелью согласно роли",
+              "type": "tm.Actor",
+              "isTrustBoundary": false,
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "threats": [],
+              "hasOpenThreats": false
+            }
+          },
+          {
+            "position": {
+              "x": 340,
+              "y": 200
+            },
+            "size": {
+              "width": 120,
+              "height": 105
+            },
+            "attrs": {
+              "text": {
+                "text": "REST API"
+              },
+              "body": {
+                "stroke": "#bf353d",
+                "strokeWidth": 2,
+                "strokeDasharray": null
+              }
+            },
+            "shape": "process",
+            "id": "a0000000-0000-4000-8000-000000000003",
+            "zIndex": 5,
+            "data": {
+              "name": "REST API",
+              "description": "Принимает запросы и применяет серверные проверки",
+              "type": "tm.Process",
+              "isTrustBoundary": false,
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "threats": [
+                {
+                  "id": "a0000000-0000-4000-8000-000000000206",
+                  "number": 6,
+                  "modelType": "STRIDE",
+                  "type": "Information disclosure",
+                  "status": "Open",
+                  "severity": "High",
+                  "title": "R-20 · Контакты в логах",
+                  "description": "Данные в журнале могут раскрывать контакты.",
+                  "mitigation": "Исключать имена и номера из диагностических сообщений."
+                },
+                {
+                  "id": "a0000000-0000-4000-8000-000000000209",
+                  "number": 9,
+                  "modelType": "STRIDE",
+                  "type": "Denial of service",
+                  "status": "Open",
+                  "severity": "Medium",
+                  "title": "R-15 · Снижение доступности",
+                  "description": "Всплеск нагрузки может увеличить задержку приложения.",
+                  "mitigation": "Отдельно измерять задержки, наблюдать за нагрузкой и ограничивать частоту запросов."
+                }
+              ],
+              "hasOpenThreats": true,
+              "isWebApplication": true
+            }
+          },
+          {
+            "position": {
+              "x": 570,
+              "y": 40
+            },
+            "size": {
+              "width": 120,
+              "height": 105
+            },
+            "attrs": {
+              "text": {
+                "text": "OTP / session"
+              },
+              "body": {
+                "stroke": "#bf353d",
+                "strokeWidth": 2,
+                "strokeDasharray": null
+              }
+            },
+            "shape": "process",
+            "id": "a0000000-0000-4000-8000-000000000004",
+            "zIndex": 5,
+            "data": {
+              "name": "OTP / session",
+              "description": "Проверяет OTP и управляет сессиями",
+              "type": "tm.Process",
+              "isTrustBoundary": false,
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "threats": [
+                {
+                  "id": "a0000000-0000-4000-8000-000000000201",
+                  "number": 1,
+                  "modelType": "STRIDE",
+                  "type": "Spoofing",
+                  "status": "Open",
+                  "severity": "High",
+                  "title": "R-11, R-21 · Подтверждение чужого номера",
+                  "description": "OTP и сессия должны подтверждать принадлежность номера.",
+                  "mitigation": "Одноразовый OTP с ограниченным сроком и числом попыток."
+                },
+                {
+                  "id": "a0000000-0000-4000-8000-000000000204",
+                  "number": 4,
+                  "modelType": "STRIDE",
+                  "type": "Tampering",
+                  "status": "Open",
+                  "severity": "High",
+                  "title": "R-21 · Изменение сессии",
+                  "description": "Сессия должна проверяться на сервере.",
+                  "mitigation": "Случайный токен, серверный хэш, ограниченный срок и аннулирование при выходе."
+                },
+                {
+                  "id": "a0000000-0000-4000-8000-000000000208",
+                  "number": 8,
+                  "modelType": "STRIDE",
+                  "type": "Denial of service",
+                  "status": "Open",
+                  "severity": "Medium",
+                  "title": "R-11 · Исчерпание лимитов SMS",
+                  "description": "Сервис зависит от доступности отправки кодов.",
+                  "mitigation": "Ограничивать запросы по IP и номеру и контролировать количество попыток."
+                }
+              ],
+              "hasOpenThreats": true
+            }
+          },
+          {
+            "position": {
+              "x": 570,
+              "y": 220
+            },
+            "size": {
+              "width": 120,
+              "height": 105
+            },
+            "attrs": {
+              "text": {
+                "text": "RBAC"
+              },
+              "body": {
+                "stroke": "#bf353d",
+                "strokeWidth": 2,
+                "strokeDasharray": null
+              }
+            },
+            "shape": "process",
+            "id": "a0000000-0000-4000-8000-000000000005",
+            "zIndex": 5,
+            "data": {
+              "name": "RBAC",
+              "description": "Проверяет роль и доступ к записи или врачу",
+              "type": "tm.Process",
+              "isTrustBoundary": false,
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "threats": [
+                {
+                  "id": "a0000000-0000-4000-8000-000000000203",
+                  "number": 3,
+                  "modelType": "STRIDE",
+                  "type": "Tampering",
+                  "status": "Open",
+                  "severity": "High",
+                  "title": "R-12 · Подмена запрошенной роли или ресурса",
+                  "description": "Клиентские значения не являются источником прав доступа.",
+                  "mitigation": "Проверять роль по серверной сессии и принадлежность записи."
+                },
+                {
+                  "id": "a0000000-0000-4000-8000-000000000211",
+                  "number": 11,
+                  "modelType": "STRIDE",
+                  "type": "Elevation of privilege",
+                  "status": "Open",
+                  "severity": "High",
+                  "title": "R-12 · Доступ к чужому расписанию",
+                  "description": "Права врача ограничены его записями.",
+                  "mitigation": "Проверять роль и идентификатор врача и подтверждать это тестом."
+                }
+              ],
+              "hasOpenThreats": true
+            }
+          },
+          {
+            "position": {
+              "x": 570,
+              "y": 410
+            },
+            "size": {
+              "width": 120,
+              "height": 105
+            },
+            "attrs": {
+              "text": {
+                "text": "Telegram\nlink"
+              },
+              "body": {
+                "stroke": "#bf353d",
+                "strokeWidth": 2,
+                "strokeDasharray": null
+              }
+            },
+            "shape": "process",
+            "id": "a0000000-0000-4000-8000-000000000006",
+            "zIndex": 5,
+            "data": {
+              "name": "Telegram\nlink",
+              "description": "Связывает подтверждённую учётную запись с чатом",
+              "type": "tm.Process",
+              "isTrustBoundary": false,
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "threats": [
+                {
+                  "id": "a0000000-0000-4000-8000-000000000202",
+                  "number": 2,
+                  "modelType": "STRIDE",
+                  "type": "Spoofing",
+                  "status": "Open",
+                  "severity": "High",
+                  "title": "R-22 · Привязка чужого чата",
+                  "description": "Чат должен принадлежать подтверждённой сессии.",
+                  "mitigation": "Одноразовая ссылка после OTP, только приватный чат, возможность отвязки."
+                }
+              ],
+              "hasOpenThreats": true
+            }
+          },
+          {
+            "position": {
+              "x": 885,
+              "y": 220
+            },
+            "size": {
+              "width": 165,
+              "height": 72
+            },
+            "attrs": {
+              "text": {
+                "text": "PostgreSQL"
+              },
+              "topLine": {
+                "stroke": "#bf353d",
+                "strokeWidth": 2,
+                "strokeDasharray": null
+              },
+              "bottomLine": {
+                "stroke": "#bf353d",
+                "strokeWidth": 2,
+                "strokeDasharray": null
+              }
+            },
+            "shape": "store",
+            "id": "a0000000-0000-4000-8000-000000000007",
+            "zIndex": 5,
+            "data": {
+              "name": "PostgreSQL",
+              "description": "Записи, шифрованные контакты, хэши OTP и сессий, аудит",
+              "type": "tm.Store",
+              "isTrustBoundary": false,
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "threats": [
+                {
+                  "id": "a0000000-0000-4000-8000-000000000205",
+                  "number": 5,
+                  "modelType": "STRIDE",
+                  "type": "Repudiation",
+                  "status": "Open",
+                  "severity": "Medium",
+                  "title": "R-12 · Отсутствие следа изменений",
+                  "description": "Для записи и изменения нужна история действий.",
+                  "mitigation": "Фиксировать действие, время и инициатора в журнале аудита."
+                },
+                {
+                  "id": "a0000000-0000-4000-8000-000000000207",
+                  "number": 7,
+                  "modelType": "STRIDE",
+                  "type": "Information disclosure",
+                  "status": "Open",
+                  "severity": "High",
+                  "title": "R-07, R-21 · Секреты и контакты в БД",
+                  "description": "Хранилище содержит данные с разными требованиями к защите.",
+                  "mitigation": "Шифровать контакты, хранить хэши кодов и сессий."
+                },
+                {
+                  "id": "a0000000-0000-4000-8000-000000000210",
+                  "number": 10,
+                  "modelType": "STRIDE",
+                  "type": "Elevation of privilege",
+                  "status": "Open",
+                  "severity": "High",
+                  "title": "R-23 · Привилегированная учётная запись по умолчанию",
+                  "description": "Права тестовых учётных записей должны быть ограничены.",
+                  "mitigation": "Отключать создание демо-аккаунтов вне деморежима."
+                }
+              ],
+              "hasOpenThreats": true,
+              "storesCredentials": true,
+              "isEncrypted": true
+            }
+          },
+          {
+            "position": {
+              "x": 885,
+              "y": 45
+            },
+            "size": {
+              "width": 165,
+              "height": 72
+            },
+            "attrs": {
+              "text": {
+                "text": "SMS gateway"
+              }
+            },
+            "shape": "actor",
+            "id": "a0000000-0000-4000-8000-000000000008",
+            "zIndex": 5,
+            "data": {
+              "name": "SMS gateway",
+              "description": "Внешний SMS-провайдер",
+              "type": "tm.Actor",
+              "isTrustBoundary": false,
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "threats": [],
+              "hasOpenThreats": false,
+              "providesAuthentication": false
+            }
+          },
+          {
+            "position": {
+              "x": 885,
+              "y": 421
+            },
+            "size": {
+              "width": 165,
+              "height": 72
+            },
+            "attrs": {
+              "text": {
+                "text": "Telegram API"
+              }
+            },
+            "shape": "actor",
+            "id": "a0000000-0000-4000-8000-000000000009",
+            "zIndex": 5,
+            "data": {
+              "name": "Telegram API",
+              "description": "Внешний сервис доставки и привязки чата",
+              "type": "tm.Actor",
+              "isTrustBoundary": false,
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "threats": [],
+              "hasOpenThreats": false,
+              "providesAuthentication": false
+            }
+          },
+          {
+            "shape": "flow",
+            "attrs": {
+              "line": {
+                "stroke": "#333333",
+                "strokeWidth": 1,
+                "targetMarker": {
+                  "name": "block"
+                },
+                "strokeDasharray": null,
+                "sourceMarker": {
+                  "name": "block"
+                }
+              }
+            },
+            "width": 200,
+            "height": 100,
+            "zIndex": 2,
+            "connector": "smooth",
+            "id": "a0000000-0000-4000-8000-000000000010",
+            "labels": [
+              {
+                "position": 0.5,
+                "attrs": {
+                  "label": {
+                    "text": "Запись и сессия"
+                  }
+                }
+              }
+            ],
+            "source": {
+              "cell": "a0000000-0000-4000-8000-000000000001"
+            },
+            "target": {
+              "cell": "a0000000-0000-4000-8000-000000000003"
+            },
+            "vertices": [],
+            "data": {
+              "type": "tm.Flow",
+              "name": "Запись и сессия",
+              "description": "Запись и сессия",
+              "protocol": "HTTPS",
+              "isEncrypted": true,
+              "isPublicNetwork": true,
+              "isBidirectional": true,
+              "isTrustBoundary": false,
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "threats": []
+            }
+          },
+          {
+            "shape": "flow",
+            "attrs": {
+              "line": {
+                "stroke": "#333333",
+                "strokeWidth": 1,
+                "targetMarker": {
+                  "name": "block"
+                },
+                "strokeDasharray": null,
+                "sourceMarker": {
+                  "name": "block"
+                }
+              }
+            },
+            "width": 200,
+            "height": 100,
+            "zIndex": 2,
+            "connector": "smooth",
+            "id": "a0000000-0000-4000-8000-000000000011",
+            "labels": [
+              {
+                "position": 0.5,
+                "attrs": {
+                  "label": {
+                    "text": "Расписание и статусы"
+                  }
+                }
+              }
+            ],
+            "source": {
+              "cell": "a0000000-0000-4000-8000-000000000002"
+            },
+            "target": {
+              "cell": "a0000000-0000-4000-8000-000000000003"
+            },
+            "vertices": [],
+            "data": {
+              "type": "tm.Flow",
+              "name": "Расписание и статусы",
+              "description": "Расписание и статусы",
+              "protocol": "HTTPS",
+              "isEncrypted": true,
+              "isPublicNetwork": true,
+              "isBidirectional": true,
+              "isTrustBoundary": false,
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "threats": []
+            }
+          },
+          {
+            "shape": "flow",
+            "attrs": {
+              "line": {
+                "stroke": "#333333",
+                "strokeWidth": 1,
+                "targetMarker": {
+                  "name": "block"
+                },
+                "strokeDasharray": null,
+                "sourceMarker": {
+                  "name": "block"
+                }
+              }
+            },
+            "width": 200,
+            "height": 100,
+            "zIndex": 2,
+            "connector": "smooth",
+            "id": "a0000000-0000-4000-8000-000000000012",
+            "labels": [
+              {
+                "position": 0.5,
+                "attrs": {
+                  "label": {
+                    "text": "Вход и сессия"
+                  }
+                }
+              }
+            ],
+            "source": {
+              "cell": "a0000000-0000-4000-8000-000000000003"
+            },
+            "target": {
+              "cell": "a0000000-0000-4000-8000-000000000004"
+            },
+            "vertices": [
+              {
+                "x": 485,
+                "y": 95
+              }
+            ],
+            "data": {
+              "type": "tm.Flow",
+              "name": "Вход и сессия",
+              "description": "Вход и сессия",
+              "protocol": "app",
+              "isEncrypted": false,
+              "isPublicNetwork": false,
+              "isBidirectional": true,
+              "isTrustBoundary": false,
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "threats": []
+            }
+          },
+          {
+            "shape": "flow",
+            "attrs": {
+              "line": {
+                "stroke": "#333333",
+                "strokeWidth": 1,
+                "targetMarker": {
+                  "name": "block"
+                },
+                "strokeDasharray": null,
+                "sourceMarker": {
+                  "name": "block"
+                }
+              }
+            },
+            "width": 200,
+            "height": 100,
+            "zIndex": 2,
+            "connector": "smooth",
+            "id": "a0000000-0000-4000-8000-000000000013",
+            "labels": [
+              {
+                "position": 0.5,
+                "attrs": {
+                  "label": {
+                    "text": "Роль и ресурс"
+                  }
+                }
+              }
+            ],
+            "source": {
+              "cell": "a0000000-0000-4000-8000-000000000003"
+            },
+            "target": {
+              "cell": "a0000000-0000-4000-8000-000000000005"
+            },
+            "vertices": [],
+            "data": {
+              "type": "tm.Flow",
+              "name": "Роль и ресурс",
+              "description": "Роль и ресурс",
+              "protocol": "app",
+              "isEncrypted": false,
+              "isPublicNetwork": false,
+              "isBidirectional": true,
+              "isTrustBoundary": false,
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "threats": []
+            }
+          },
+          {
+            "shape": "flow",
+            "attrs": {
+              "line": {
+                "stroke": "#333333",
+                "strokeWidth": 1,
+                "targetMarker": {
+                  "name": "block"
+                },
+                "strokeDasharray": null,
+                "sourceMarker": {
+                  "name": "block"
+                }
+              }
+            },
+            "width": 200,
+            "height": 100,
+            "zIndex": 2,
+            "connector": "smooth",
+            "id": "a0000000-0000-4000-8000-000000000014",
+            "labels": [
+              {
+                "position": 0.5,
+                "attrs": {
+                  "label": {
+                    "text": "Подтверждённая привязка"
+                  }
+                }
+              }
+            ],
+            "source": {
+              "cell": "a0000000-0000-4000-8000-000000000003"
+            },
+            "target": {
+              "cell": "a0000000-0000-4000-8000-000000000006"
+            },
+            "vertices": [
+              {
+                "x": 480,
+                "y": 440
+              }
+            ],
+            "data": {
+              "type": "tm.Flow",
+              "name": "Подтверждённая привязка",
+              "description": "Подтверждённая привязка",
+              "protocol": "app",
+              "isEncrypted": false,
+              "isPublicNetwork": false,
+              "isBidirectional": true,
+              "isTrustBoundary": false,
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "threats": []
+            }
+          },
+          {
+            "shape": "flow",
+            "attrs": {
+              "line": {
+                "stroke": "#333333",
+                "strokeWidth": 1,
+                "targetMarker": {
+                  "name": "block"
+                },
+                "strokeDasharray": null,
+                "sourceMarker": {
+                  "name": "block"
+                }
+              }
+            },
+            "width": 200,
+            "height": 100,
+            "zIndex": 2,
+            "connector": "smooth",
+            "id": "a0000000-0000-4000-8000-000000000015",
+            "labels": [
+              {
+                "position": 0.5,
+                "attrs": {
+                  "label": {
+                    "text": "Записи и аудит"
+                  }
+                }
+              }
+            ],
+            "source": {
+              "cell": "a0000000-0000-4000-8000-000000000005"
+            },
+            "target": {
+              "cell": "a0000000-0000-4000-8000-000000000007"
+            },
+            "vertices": [],
+            "data": {
+              "type": "tm.Flow",
+              "name": "Записи и аудит",
+              "description": "Записи и аудит",
+              "protocol": "PostgreSQL",
+              "isEncrypted": false,
+              "isPublicNetwork": false,
+              "isBidirectional": true,
+              "isTrustBoundary": false,
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "threats": []
+            }
+          },
+          {
+            "shape": "flow",
+            "attrs": {
+              "line": {
+                "stroke": "#333333",
+                "strokeWidth": 1,
+                "targetMarker": {
+                  "name": "block"
+                },
+                "strokeDasharray": null,
+                "sourceMarker": {
+                  "name": "block"
+                }
+              }
+            },
+            "width": 200,
+            "height": 100,
+            "zIndex": 2,
+            "connector": "smooth",
+            "id": "a0000000-0000-4000-8000-000000000016",
+            "labels": [
+              {
+                "position": 0.5,
+                "attrs": {
+                  "label": {
+                    "text": "Хэши и сессии"
+                  }
+                }
+              }
+            ],
+            "source": {
+              "cell": "a0000000-0000-4000-8000-000000000004"
+            },
+            "target": {
+              "cell": "a0000000-0000-4000-8000-000000000007"
+            },
+            "vertices": [
+              {
+                "x": 755,
+                "y": 172
+              }
+            ],
+            "data": {
+              "type": "tm.Flow",
+              "name": "Хэши и сессии",
+              "description": "Хэши и сессии",
+              "protocol": "PostgreSQL",
+              "isEncrypted": false,
+              "isPublicNetwork": false,
+              "isBidirectional": true,
+              "isTrustBoundary": false,
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "threats": []
+            }
+          },
+          {
+            "shape": "flow",
+            "attrs": {
+              "line": {
+                "stroke": "#333333",
+                "strokeWidth": 1,
+                "targetMarker": {
+                  "name": "block"
+                },
+                "strokeDasharray": null
+              }
+            },
+            "width": 200,
+            "height": 100,
+            "zIndex": 2,
+            "connector": "smooth",
+            "id": "a0000000-0000-4000-8000-000000000017",
+            "labels": [
+              {
+                "position": 0.5,
+                "attrs": {
+                  "label": {
+                    "text": "Одноразовый код"
+                  }
+                }
+              }
+            ],
+            "source": {
+              "cell": "a0000000-0000-4000-8000-000000000004"
+            },
+            "target": {
+              "cell": "a0000000-0000-4000-8000-000000000008"
+            },
+            "vertices": [],
+            "data": {
+              "type": "tm.Flow",
+              "name": "Одноразовый код",
+              "description": "Одноразовый код",
+              "protocol": "HTTPS",
+              "isEncrypted": true,
+              "isPublicNetwork": true,
+              "isBidirectional": false,
+              "isTrustBoundary": false,
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "threats": []
+            }
+          },
+          {
+            "shape": "flow",
+            "attrs": {
+              "line": {
+                "stroke": "#333333",
+                "strokeWidth": 1,
+                "targetMarker": {
+                  "name": "block"
+                },
+                "strokeDasharray": null,
+                "sourceMarker": {
+                  "name": "block"
+                }
+              }
+            },
+            "width": 200,
+            "height": 100,
+            "zIndex": 2,
+            "connector": "smooth",
+            "id": "a0000000-0000-4000-8000-000000000018",
+            "labels": [
+              {
+                "position": 0.5,
+                "attrs": {
+                  "label": {
+                    "text": "Привязка чата"
+                  }
+                }
+              }
+            ],
+            "source": {
+              "cell": "a0000000-0000-4000-8000-000000000006"
+            },
+            "target": {
+              "cell": "a0000000-0000-4000-8000-000000000007"
+            },
+            "vertices": [
+              {
+                "x": 765,
+                "y": 375
+              }
+            ],
+            "data": {
+              "type": "tm.Flow",
+              "name": "Привязка чата",
+              "description": "Привязка чата",
+              "protocol": "PostgreSQL",
+              "isEncrypted": false,
+              "isPublicNetwork": false,
+              "isBidirectional": true,
+              "isTrustBoundary": false,
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "threats": []
+            }
+          },
+          {
+            "shape": "flow",
+            "attrs": {
+              "line": {
+                "stroke": "#333333",
+                "strokeWidth": 1,
+                "targetMarker": {
+                  "name": "block"
+                },
+                "strokeDasharray": null,
+                "sourceMarker": {
+                  "name": "block"
+                }
+              }
+            },
+            "width": 200,
+            "height": 100,
+            "zIndex": 2,
+            "connector": "smooth",
+            "id": "a0000000-0000-4000-8000-000000000019",
+            "labels": [
+              {
+                "position": 0.5,
+                "attrs": {
+                  "label": {
+                    "text": "Привязка и отправка"
+                  }
+                }
+              }
+            ],
+            "source": {
+              "cell": "a0000000-0000-4000-8000-000000000006"
+            },
+            "target": {
+              "cell": "a0000000-0000-4000-8000-000000000009"
+            },
+            "vertices": [],
+            "data": {
+              "type": "tm.Flow",
+              "name": "Привязка и отправка",
+              "description": "Привязка и отправка",
+              "protocol": "HTTPS",
+              "isEncrypted": true,
+              "isPublicNetwork": true,
+              "isBidirectional": true,
+              "isTrustBoundary": false,
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "threats": []
+            }
+          },
+          {
+            "shape": "trust-boundary-curve",
+            "attrs": {
+              "line": {
+                "targetMarker": "",
+                "sourceMarker": ""
+              }
+            },
+            "width": 200,
+            "height": 100,
+            "zIndex": 1,
+            "connector": "smooth",
+            "id": "a0000000-0000-4000-8000-000000000020",
+            "source": {
+              "x": 245,
+              "y": 45
+            },
+            "target": {
+              "x": 245,
+              "y": 520
+            },
+            "vertices": [],
+            "labels": [
+              {
+                "attrs": {
+                  "text": {
+                    "text": "Browser / API"
+                  }
+                }
+              }
+            ],
+            "data": {
+              "type": "tm.Boundary",
+              "name": "Browser / API",
+              "description": "Browser / API",
+              "isTrustBoundary": true,
+              "hasOpenThreats": false
+            }
+          },
+          {
+            "shape": "trust-boundary-curve",
+            "attrs": {
+              "line": {
+                "targetMarker": "",
+                "sourceMarker": ""
+              }
+            },
+            "width": 200,
+            "height": 100,
+            "zIndex": 1,
+            "connector": "smooth",
+            "id": "a0000000-0000-4000-8000-000000000021",
+            "source": {
+              "x": 790,
+              "y": 35
+            },
+            "target": {
+              "x": 790,
+              "y": 525
+            },
+            "vertices": [],
+            "labels": [
+              {
+                "attrs": {
+                  "text": {
+                    "text": "App / DB and providers"
+                  }
+                }
+              }
+            ],
+            "data": {
+              "type": "tm.Boundary",
+              "name": "App / DB and providers",
+              "description": "App / DB and providers",
+              "isTrustBoundary": true,
+              "hasOpenThreats": false
+            }
+          }
+        ]
+      }
+    ],
+    "diagramTop": 1,
+    "reviewer": "",
+    "threatTop": 11
+  }
+}

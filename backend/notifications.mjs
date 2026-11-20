@@ -1,6 +1,19 @@
 import { randomBytes } from 'node:crypto';
 import { audit, enqueueNotifications, localDate } from './booking.mjs';
 
+const telegramMessages = {
+  ru: {
+    linked: 'Уведомления DentLux подключены.',
+    expired: 'Ссылка устарела. Откройте новую ссылку на сайте DentLux.',
+    help: 'Чтобы получать уведомления, запишитесь на сайте DentLux и выберите Telegram на экране подтверждения.',
+  },
+  kk: {
+    linked: 'DentLux хабарламалары қосылды.',
+    expired: 'Сілтеменің мерзімі бітті. DentLux сайтында жаңа сілтеме алыңыз.',
+    help: 'Хабарлама алу үшін DentLux сайтында жазылып, растау экранында Telegram таңдаңыз.',
+  },
+};
+
 export async function sendSms(config, phone, text, idempotencyKey) {
   if (config.demo) return 'demo';
   const response = await fetch(config.smsUrl, {
@@ -16,14 +29,21 @@ export async function sendSms(config, phone, text, idempotencyKey) {
   if (!response.ok) throw new Error(`SMS_HTTP_${response.status}`);
   return 'sent';
 }
-async function sendTelegram(config, chatId, text) {
-  const response = await fetch(`https://api.telegram.org/bot${config.telegramToken}/sendMessage`, {
+async function telegramRequest(config, method, payload = {}) {
+  const response = await fetch(`https://api.telegram.org/bot${config.telegramToken}/${method}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: chatId, text }),
+    body: JSON.stringify(payload),
     signal: AbortSignal.timeout(1500),
   });
-  if (!response.ok || !(await response.json()).ok) throw new Error('TELEGRAM_SEND_FAILED');
+  if (!response.ok) throw new Error('TELEGRAM_UNAVAILABLE');
+  const data = await response.json();
+  if (!data?.ok) throw new Error('TELEGRAM_UNAVAILABLE');
+  return data.result;
+}
+
+function sendTelegram(config, chatId, text) {
+  return telegramRequest(config, 'sendMessage', { chat_id: chatId, text });
 }
 export async function processOutbox(db, config, crypto, now = new Date()) {
   const candidates = await db.query(
@@ -52,14 +72,17 @@ export async function processOutbox(db, config, crypto, now = new Date()) {
       let status = 'demo';
       if (notification.channel === 'sms')
         status = await sendSms(config, crypto.decrypt(booking.phone_enc), text, notification.id);
-      else if (!config.demo) {
+      else if (config.telegramToken) {
         const [link] = await db.query('SELECT chat_id_enc FROM telegram_links WHERE user_id=$1', [
           booking.patient_id,
         ]);
         if (!link) throw new Error('TELEGRAM_UNLINKED');
-        await sendTelegram(config, crypto.decrypt(link.chat_id_enc), text);
+        const purpose = notification.kind.startsWith('reminder:')
+          ? 'Напоминание о приёме'
+          : 'Запись подтверждена';
+        await sendTelegram(config, crypto.decrypt(link.chat_id_enc), `${purpose}\n${text}`);
         status = 'sent';
-      }
+      } else if (!config.demo) throw new Error('TELEGRAM_UNAVAILABLE');
       await db.query(
         'UPDATE notifications SET status=$2,attempts=attempts+1,sent_at=$3,lease_until=NULL,last_error=NULL WHERE id=$1',
         [notification.id, status, new Date().toISOString()],
@@ -87,18 +110,15 @@ export async function processOutbox(db, config, crypto, now = new Date()) {
 }
 export async function createTelegramLink(db, config, crypto, userId) {
   if (!config.telegramToken) return { available: false };
-  const response = await fetch(`https://api.telegram.org/bot${config.telegramToken}/getMe`, {
-    signal: AbortSignal.timeout(1500),
-  });
-  const data = await response.json();
-  if (!response.ok || !data.ok) throw new Error('TELEGRAM_UNAVAILABLE');
+  const bot = await telegramRequest(config, 'getMe');
+  if (!bot?.is_bot || !bot.username) throw new Error('TELEGRAM_UNAVAILABLE');
   const token = randomBytes(24).toString('hex');
   await db.query('INSERT INTO telegram_tokens(token_hash,user_id,expires_at) VALUES($1,$2,$3)', [
     crypto.hash(token),
     userId,
     new Date(Date.now() + 5 * 60000).toISOString(),
   ]);
-  return { available: true, url: `https://t.me/${data.result.username}?start=${token}` };
+  return { available: true, url: `https://t.me/${bot.username}?start=${token}` };
 }
 export async function linkTelegramAccount(db, crypto, rawToken, chatId) {
   return db.transaction(async (tx) => {
@@ -122,6 +142,29 @@ export async function linkTelegramAccount(db, crypto, rawToken, chatId) {
     return true;
   });
 }
+
+async function handleTelegramMessage(db, config, crypto, message) {
+  if (message?.chat?.type !== 'private' || typeof message.text !== 'string') return;
+  const [command, code, extra] = message.text.trim().split(/\s+/);
+  if (!['/start', '/help'].includes(command)) return;
+  const chatId = message.chat.id;
+  const messages = message.from?.language_code?.startsWith('kk')
+    ? telegramMessages.kk
+    : telegramMessages.ru;
+  let reply = `${messages.help}\n${config.publicUrl}`;
+
+  if (command === '/start' && !extra && /^[a-f0-9]{48}$/.test(code || '')) {
+    const linked = await linkTelegramAccount(db, crypto, code, chatId);
+    reply = linked ? messages.linked : messages.expired;
+  }
+
+  try {
+    await sendTelegram(config, chatId, reply);
+  } catch {
+    console.error('Could not send a Telegram reply');
+  }
+}
+
 export function startWorkers(db, config, crypto) {
   let running = false,
     stopped = false,
@@ -136,19 +179,15 @@ export function startWorkers(db, config, crypto) {
         new Date(Date.now() - 86400000).toISOString(),
       ]);
       await db.query('DELETE FROM telegram_tokens WHERE expires_at<$1', [new Date().toISOString()]);
-      if (config.telegramToken && !config.demo) {
-        const response = await fetch(
-          `https://api.telegram.org/bot${config.telegramToken}/getUpdates?offset=${offset}&timeout=0`,
-          { signal: AbortSignal.timeout(1500) },
-        );
-        const data = await response.json();
-        if (!response.ok || !data.ok) throw new Error('TELEGRAM_POLL_FAILED');
-        for (const update of data.result) {
+      if (config.telegramToken) {
+        const updates = await telegramRequest(config, 'getUpdates', {
+          offset,
+          timeout: 0,
+          allowed_updates: ['message'],
+        });
+        for (const update of updates) {
+          await handleTelegramMessage(db, config, crypto, update.message);
           offset = update.update_id + 1;
-          const message = update.message;
-          const match = /^\/start ([a-f0-9]{48})$/.exec(message?.text || '');
-          if (!match || message.chat.type !== 'private') continue;
-          await linkTelegramAccount(db, crypto, match[1], message.chat.id);
         }
       }
     } catch {

@@ -337,23 +337,36 @@ test('five roles enforce data boundaries, audit is immutable, receptionist can u
     false,
   );
 });
-test('SQLite dev data persists across restarts', async () => {
+test('SQLite demo data survives restart and can be restored from a snapshot', async () => {
   const { mkdtempSync, rmSync } = await import('node:fs');
   const { tmpdir } = await import('node:os');
   const path = await import('node:path');
   const dir = mkdtempSync(path.join(tmpdir(), 'dentlux-persist-'));
   const config = loadConfig({ DATA_DIR: dir });
+  const snapshot = path.join(dir, 'snapshot.sqlite');
   const { openDatabase } = await import('../backend/db.mjs');
   try {
-    let db = await openDatabase(config);
-    await db.query(
-      'INSERT INTO audit(id,actor_id,action,entity_id,details,created_at) VALUES($1,$2,$3,$4,$5,$6)',
-      [randomUUID(), 'system', 'test', 'persist', '{}', new Date().toISOString()],
-    );
-    await db.close();
-    db = await openDatabase(loadConfig({ DATA_DIR: dir }));
-    assert.equal((await db.query("SELECT * FROM audit WHERE entity_id='persist'")).length, 1);
-    await db.close();
+    const source = await openDatabase(config);
+    try {
+      await source.query(
+        'INSERT INTO audit(id,actor_id,action,entity_id,details,created_at) VALUES($1,$2,$3,$4,$5,$6)',
+        [randomUUID(), 'system', 'test', 'persist', '{}', new Date().toISOString()],
+      );
+      await source.query('VACUUM INTO $1', [snapshot]);
+    } finally {
+      await source.close();
+    }
+    for (const openedConfig of [config, { ...config, sqlitePath: snapshot }]) {
+      const opened = await openDatabase(openedConfig);
+      try {
+        assert.equal(
+          (await opened.query("SELECT * FROM audit WHERE entity_id='persist'")).length,
+          1,
+        );
+      } finally {
+        await opened.close();
+      }
+    }
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
